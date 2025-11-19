@@ -17,6 +17,7 @@ def prijava_submit():
     uporabnisko_ime = request.args.get("username")
     geslo = request.args.get("geslo")
     print(uporabnisko_ime, geslo)
+    geslo = geslo.replace('"', ' ')
 
     conn = sqlite3.connect("test.db")
     cursor = conn.cursor()
@@ -40,10 +41,22 @@ def registracija():
 def registracija_submit():
     uporabnisko_ime = request.args.get("username")
     geslo = request.args.get("geslo")
+    if len(geslo) < 6:
+       return "Geslo mora imeti vsaj 6 znakov!"
 
+#preverimo ce uporabnik ze obstaja
+    lookup_command = 'SELECT * FROM CONTACTS WHERE first_name="'+uporabnisko_ime+'";'
+    con = sqlite3.connect("test.db")
+    cursor = conn.cursor()
+    cursor.execute(lookup_command)
+    result = cursor.fetchone()
+    if result:
+        conn.close()
+        return "uporabnisko ime ze obstaja"
+
+#dodamo novega uporabnika
     insert_command = 'INSERT INTO contacts(first_name, last_name) VALUES("'+uporabnisko_ime+'", "'+geslo+'");'
     print(insert_command)
-    conn = sqlite3.connect("test.db")
     cursor = conn.cursor()
     cursor.execute(insert_command)
     conn.commit()
@@ -77,6 +90,7 @@ def add_note_submit():
 
     note_text = request.args.get("note")
     note_text = note_text.replace("<", " !NE! ").replace(">", " !NE! ")
+
     conn = sqlite3.connect("test.db")
     cursor = conn.cursor()
     insert_command = 'INSERT INTO notes(username, note_text) VALUES("'+username+'", "'+note_text+'")'
