@@ -11,6 +11,17 @@ def index():
 @app.route('/prijava/')
 def prijava():
     return render_template("prijava.html")
+def preveri_geslo(uporabnisko_ime, geslo):
+    conn = sqlite3.connect("test.db")
+    cursor = conn.cursor()
+    query = 'SELECT * FROM contacts WHERE first_name="'+uporabnisko_ime+'" AND last_name="'+geslo+'"'
+    cursor.execute(query)
+    result = cursor.fetchone()
+    conn.close()
+    if result:
+        return True
+    else:
+        return False
 
 @app.route('/prijava-submit/')
 def prijava_submit():
@@ -29,6 +40,7 @@ def prijava_submit():
     if result:
         response = make_response(redirect("/main/"))
         response.set_cookie("username", uporabnisko_ime)
+        response.set_cookie("password", geslo)
         return response
     else:
         return render_template("prijava.html", info_text = "Prijava ni uspela")
@@ -66,7 +78,10 @@ def registracija_submit():
 @app.route('/main/')
 def main():
     username = request.cookies.get("username")
-    if not username:
+    password = request.cookies.get("password")
+    if not username or not password:
+        return redirect("/prijava/")
+    if not preveri_geslo (username, password):
         return redirect("/prijava/")
 
     conn = sqlite3.connect("test.db")
