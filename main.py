@@ -4,6 +4,13 @@ import os
 
 app = Flask(__name__)
 
+def hash_password(geslo):
+    """
+    Enostavna hash funkcija, ki vrne dolžino gesla.
+    """
+    return len(geslo)
+
+
 @app.route('/')
 def index():
     return render_template("index.html")
@@ -16,11 +23,15 @@ def prijava():
 def prijava_submit():
     uporabnisko_ime = request.args.get("username")
     geslo = request.args.get("geslo")
+    
+    geslo_hash = hash_password(geslo)
 
     conn = sqlite3.connect("test.db")
     cursor = conn.cursor()
-    query = 'SELECT * FROM users WHERE username="'+uporabnisko_ime+'" AND password="'+geslo+'"'
-    cursor.execute(query)
+    cursor.execute(
+        'SELECT * FROM users WHERE username = ? AND password_hash = ?',
+        (uporabnisko_ime, geslo_hash)
+    )
     result = cursor.fetchone()
     conn.close()
 
@@ -29,7 +40,7 @@ def prijava_submit():
         response.set_cookie("username", uporabnisko_ime)
         return response
     else:
-        return render_template("prijava.html", info_text = "Prijava ni uspela")
+        return render_template("prijava.html", info_text="Prijava ni uspela")
 
 @app.route('/registracija/')
 def registracija():
@@ -39,11 +50,20 @@ def registracija():
 def registracija_submit():
     uporabnisko_ime = request.args.get("username")
     geslo = request.args.get("geslo")
-
-    insert_command = 'INSERT INTO users(username, password) VALUES("'+uporabnisko_ime+'", "'+geslo+'");'
-    print(insert_command)
+    
+    geslo_hash = hash_password(geslo)
+    
     conn = sqlite3.connect("test.db")
     cursor = conn.cursor()
+
+    cursor.execute('SELECT * FROM users WHERE username = ?', (uporabnisko_ime,))
+    obstaja = cursor.fetchone()
+
+    if obstaja:
+        conn.close()
+        return "Uporabniško ime že obstaja! Izberi drugega."
+
+    insert_command = 'INSERT INTO users(username, password_hash) VALUES("'+uporabnisko_ime+'", '+str(geslo_hash)+');'
     cursor.execute(insert_command)
     conn.commit()
     conn.close()

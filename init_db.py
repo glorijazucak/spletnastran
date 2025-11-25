@@ -12,7 +12,7 @@ def init_db():
         CREATE TABLE users (
             id INTEGER PRIMARY KEY,
             username TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL
+            password_hash INTEGER NOT NULL
         )
     ''')
 
